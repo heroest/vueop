@@ -1,0 +1,28 @@
+.main-window {
+    max-width: 1280px;
+    min-height: 600px;
+    margin: 10px auto;
+    background-color: #ffffff;
+    -moz-box-shadow:5px 5px 20px #333333; -webkit-box-shadow:5px 5px 20px #333333; box-shadow:5px 5px 20px #333333;
+    padding: 15px;
+}
+
+.scrollable {
+    height: 500px;
+    overflow-y: auto;
+    border: 1px solid #8b89d6;
+    padding: 10px;
+}
+
+.text-sm {
+    font-size: 12px;
+}
+
+.margin-top-sm {
+    margin-top: 10px;
+}
+
+body {
+    background-color: #dadada;
+}
+

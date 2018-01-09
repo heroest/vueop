@@ -1,0 +1,49 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/combine/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css,npm/bootstrap@3.3.7/dist/css/bootstrap.min.css">
+        <link rel='stylesheet' href='main.css'>
+    </head>
+
+    <body>
+        <div class='row main-window' id='vueApp'>
+            <h4>执行脚本</h4>
+            <hr />
+            <div class='col-md-6 col-sm-12'>
+                <div class='form-group'>
+                    <label>脚本命令:</label>
+                    <input type='text' class='form-control' v-bind:value='input_cmd' />
+                </div>
+                <div class='form-group'>
+                    <label>监听端口:</label>
+                    <input type='text' class='form-control' v-bind:value='input_port' />
+                </div>
+                <button class='btn btn-primary'>开启</button>
+
+                <table class='table margin-top-sm'>
+                    <thead>
+                        <tr>
+                            <th class='col-md-1'>#</th>
+                            <th class='col-md-3'>Name</th>
+                            <th class='col-md-3'>Status</th>
+                            <th class='col-md-5'>Last Checked</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for='(row, index) in process_list'>
+                            <td>{{index}}</td>
+                            <td>{{row.name}}</td>
+                            <td>{{row.status}}</td>
+                            <td>{{time2str(row.last_checked)}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class='col-md-6 col-sm-12 scrollable'>
+                <p class='text-muted' v-if='consolg_messages.length < 1'>No Message Yet...</p>
+            </div>
+        </div>
+    </body>
+
+    <script src="https://cdn.jsdelivr.net/combine/npm/vue@2.5.13,npm/jquery@3.2.1,npm/bootstrap@3.3.7/dist/js/bootstrap.min.js"></script>
+    <script src="main.js"></script>
+</html>
