@@ -13,6 +13,8 @@ class PM
         if(empty(self::$storage) and file_exists(self::PID_FILE)) {
             $json = file_get_contents(self::PID_FILE);
             self::$storage = json_decode($json, true);
+        } else {
+            self::$storage = [];
         }
     }
 
@@ -26,10 +28,16 @@ class PM
     {
         self::init();
         $storage = [];
+        $ret = null;
         foreach(self::$storage as $process) {
-            if($process['port'] != $port) $storage[] = $process;
+            if($process['port'] != $port) {
+                $storage[] = $process;
+            } else {
+                $ret = $process;
+            }
         }
         self::$storage = $storage;
+        return $ret;
     }
 
     public static function has($port)
@@ -53,6 +61,7 @@ class PM
             }
         }
         self::$storage = $storage;
+        return self::has($port);
     }
 
     public static function save()
@@ -68,9 +77,9 @@ $params = $_GET;
 $action = $params['action'];
 
 if(function_exists($action)) {
-    return jsonReponse($action($params));
+    return jsonResponse($action($params));
 } else {
-    return jsonReponse(['code' => 'fail', 'data' => "{$action} not exists"]);
+    return jsonResponse(['code' => 'fail', 'data' => "{$action} not exists"]);
 }
 
 
@@ -81,9 +90,10 @@ if(function_exists($action)) {
 function jsonResponse($mixed)
 {
     if(is_array($mixed)) {
+        $mixed['time'] = time();
         echo json_encode($mixed);
     } else {
-        echo json_encode(['code' => 'success', 'data' => $mixed]);
+        echo json_encode(['code' => 'success', 'data' => $mixed, 'time' => time()]);
     }
 }
 
@@ -99,28 +109,70 @@ function isPortAlive($port)
 
 function startJob($params)
 {
-    $cmd = $params['cmd'];
+    $cmd = urldecode($params['cmd']);
     $port = $params['port'];
 
-    if(PM::has($port)) {
-        
+    if(PM::has($port) and isPortAlive($port)) return ['code' => 'fail', 'data' => "{$cmd}:{$port} is alive"];
+    PM::pop($port);
+
+    $a = array(  
+        0 => array("pipe", "r"), 
+        1 => array("pipe", "w"), 
+        2 => array("pipe", "r") 
+    );
+    proc_open("winpty {$cmd}", $a, $p);
+    $st = time();
+    $now = $st;
+    while($now - $st < 15) {
+        $now = time();
+        if(isPortAlive($port)) {
+            $process = [
+                'cmd' => $cmd,
+                'name' => strtolower($cmd), 
+                'pid' => getPidByPort($port),
+                'port' => $port,
+            ];
+            PM::push($process);
+            PM::save();
+            return ['code' => 'success', 'data' => $process];
+        } else {
+            sleep(1);
+        }
     }
+    return ['code' => 'fail', 'data' => 'fail to start a job'];
 }
 
 function stopJob($params)
 {
     $port = $params['port'];
+    $res = PM::kill($port);
+    PM::save();
+
+    if(!$res) {
+        return ['code' => 'fail', 'data' => 'Fail to stop job'];
+    } else {
+        return ['code' => 'success', 'data' => 'Job Stopped'];
+    }
 }
 
 function checkJob($params)
 {
     $status = isPortAlive($params['port']);
-    return ['code' => 'success', 'data' => $status];
+    
+    return ['code' => 'success', 'data' => ['status' => $status]];
 }
 
 function getPidByPort($port)
 {
-
+    $p = popen('netstat -ano -p TCP', 'r');
+    while(false !== $row = fgets($p, 1024)) {
+        if(strpos($row, 'TCP') === false) continue;
+        $row = preg_replace('/\s+/', ',', trim($row));
+        list(,$line,,,$pid) = explode(',', $row);
+        list(,$match_port) = explode(':', $line);
+        if($match_port == $port) return $pid;
+    }
+    return false;
 }
 
 

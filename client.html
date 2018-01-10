@@ -1,5 +1,6 @@
 <html>
     <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/combine/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css,npm/bootstrap@3.3.7/dist/css/bootstrap.min.css">
         <link rel='stylesheet' href='main.css'>
     </head>
@@ -11,13 +12,13 @@
             <div class='col-md-6 col-sm-12'>
                 <div class='form-group'>
                     <label>脚本命令:</label>
-                    <input type='text' class='form-control' v-bind:value='input_cmd' />
+                    <input type='text' class='form-control' v-model:value='input_cmd' />
                 </div>
                 <div class='form-group'>
                     <label>监听端口:</label>
-                    <input type='text' class='form-control' v-bind:value='input_port' />
+                    <input type='text' class='form-control' v-model:value='input_port' />
                 </div>
-                <button class='btn btn-primary'>开启</button>
+                <button class='btn btn-primary' v-on:click='startJob'>开启</button>
 
                 <table class='table margin-top-sm'>
                     <thead>
@@ -33,13 +34,14 @@
                             <td>{{index}}</td>
                             <td>{{row.name}}</td>
                             <td>{{row.status}}</td>
-                            <td>{{time2str(row.last_checked)}}</td>
+                            <td>{{time2str(row.checked)}}</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
             <div class='col-md-6 col-sm-12 scrollable'>
-                <p class='text-muted' v-if='consolg_messages.length < 1'>No Message Yet...</p>
+                <p class='text-muted' v-if='console_messages.length < 1'>No Message Yet...</p>
+                <p v-for='item in console_messages' v-bind:class='getClass(item.type)'>{{item.text}}</p>
             </div>
         </div>
     </body>
