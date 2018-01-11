@@ -31,10 +31,12 @@
                     </thead>
                     <tbody>
                         <tr v-for='(row, index) in process_list'>
-                            <td>{{index}}</td>
+                            <td>{{index + 1}}</td>
                             <td>{{row.name}}</td>
-                            <td>{{row.status}}</td>
-                            <td>{{time2str(row.checked)}}</td>
+                            <td>
+                                <span v-bind:class='statusLabel(row.status)'>{{(row.status)}}</span>
+                            </td>
+                            <td>{{time2str(row.checked_at)}}</td>
                         </tr>
                     </tbody>
                 </table>

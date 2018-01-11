@@ -12,7 +12,9 @@ class PM
     {
         if(empty(self::$storage) and file_exists(self::PID_FILE)) {
             $json = file_get_contents(self::PID_FILE);
-            self::$storage = json_decode($json, true);
+            foreach(json_decode($json, true) as $process) {
+                if(isPortAlive($process['port'])) self::$storage[] = $process;
+            }
         } else {
             self::$storage = [];
         }
@@ -64,6 +66,12 @@ class PM
         return self::has($port);
     }
 
+    public static function fetchJob()
+    {
+        self::init();
+        return self::$storage;
+    }
+
     public static function save()
     {
         $fp = fopen(self::PID_FILE, 'w');
@@ -107,6 +115,11 @@ function isPortAlive($port)
     return ($res == false) ? false : true;
 }
 
+function fetchJob()
+{
+    return ['code' => 'success', 'data' => PM::fetchJob()];
+}
+
 function startJob($params)
 {
     $cmd = urldecode($params['cmd']);
@@ -115,12 +128,7 @@ function startJob($params)
     if(PM::has($port) and isPortAlive($port)) return ['code' => 'fail', 'data' => "{$cmd}:{$port} is alive"];
     PM::pop($port);
 
-    $a = array(  
-        0 => array("pipe", "r"), 
-        1 => array("pipe", "w"), 
-        2 => array("pipe", "r") 
-    );
-    proc_open("winpty {$cmd}", $a, $p);
+    popen("start {$cmd}", 'r');
     $st = time();
     $now = $st;
     while($now - $st < 15) {
