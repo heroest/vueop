@@ -9,7 +9,7 @@
         <div class='row main-window' id='vueApp'>
             <h4>执行脚本</h4>
             <hr />
-            <div class='col-md-6 col-sm-12'>
+            <div class='col-md-4 col-sm-12'>
                 <div class='form-group'>
                     <label>脚本命令:</label>
                     <input type='text' class='form-control' v-model:value='input_cmd' />
@@ -18,36 +18,53 @@
                     <label>监听端口:</label>
                     <input type='text' class='form-control' v-model:value='input_port' />
                 </div>
-                <button class='btn btn-primary' v-on:click='startJob'>开启</button>
+                <button class='btn btn-primary' v-on:click='startJob'>{{computedSubmitText}}</button>
 
-                <table class='table margin-top-sm'>
+                <div class='scrollable margin-top-sm'>
+                    <p class='text-muted' v-if='console_messages.length < 1'>No Message Yet...</p>
+                    <p v-for='item in console_messages' v-bind:class='getClass(item.type)'><b>{{item.time}}</b> - {{item.text}}</p>
+                </div>
+            </div>
+            <div class='col-md-8 col-sm-12'>
+                <table class='table table-striped'>
                     <thead>
                         <tr>
-                            <th class='col-md-1'>#</th>
-                            <th class='col-md-3'>Name</th>
-                            <th class='col-md-3'>Status</th>
-                            <th class='col-md-5'>Last Checked</th>
+                            <th>Pid</th>
+                            <th>Port</th>
+                            <th>Name</th>
+                            <th>Status</th>
+                            <th>Last Checked</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for='(row, index) in process_list'>
-                            <td>{{index + 1}}</td>
-                            <td>{{row.name}}</td>
-                            <td>
-                                <span v-bind:class='statusLabel(row.status)'>{{(row.status)}}</span>
-                            </td>
-                            <td>{{time2str(row.checked_at)}}</td>
-                        </tr>
+                        <tr is='process-row'
+                            v-for='(process, index) in process_list'
+                            v-bind:process='process'></tr>
                     </tbody>
                 </table>
-            </div>
-            <div class='col-md-6 col-sm-12 scrollable'>
-                <p class='text-muted' v-if='console_messages.length < 1'>No Message Yet...</p>
-                <p v-for='item in console_messages' v-bind:class='getClass(item.type)'>{{item.text}}</p>
             </div>
         </div>
     </body>
 
-    <script src="https://cdn.jsdelivr.net/combine/npm/vue@2.5.13,npm/jquery@3.2.1,npm/bootstrap@3.3.7/dist/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/combine/npm/jquery@3.2.1,npm/bootstrap@3.3.7/dist/js/bootstrap.min.js"></script>
+    <script src="https://cdn.bootcss.com/vue/2.5.13/vue.js"></script>
+    <!-- <script src="https://cdn.bootcss.com/vue/2.5.13/vue.min.js"></script> -->
     <script src="main.js"></script>
 </html>
+
+<template id='process-row'>
+    <tr>
+        <td>{{pid}}</td>
+        <td>{{port}}</td>
+        <td>{{name}}</td>
+        <td>
+            <label v-bind:class='getStatusClass(status)'>{{status}}</label>
+        </td>
+        <td>{{lastCheckedAt}}</td>
+        <td>
+            <button class='btn btn-success btn-sm' v-show='status == "stopped"' v-on:click='restartJob'>Restart</button>
+            <button class='btn btn-danger btn-sm' v-show='status == "running"' v-on:click='stopJob'>Stop</button>
+        </td>
+    </tr>
+</template>

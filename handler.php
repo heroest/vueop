@@ -4,7 +4,7 @@ class PM
 {
     const PID_FILE = 'pid.json';
 
-    private static $storage;
+    private static $storage = [];
 
     private function __construct(){}
         
@@ -15,8 +15,8 @@ class PM
             foreach(json_decode($json, true) as $process) {
                 if(isPortAlive($process['port'])) self::$storage[] = $process;
             }
-        } else {
-            self::$storage = [];
+            // devLog('init:');
+            // devLog(self::$storage);
         }
     }
 
@@ -57,13 +57,15 @@ class PM
         $storage = [];
         foreach(self::$storage as $process) {
             if($process['port'] == $port) {
-                exec("taskkill /PID {$process['pid']} /T /F");
+                popen("taskkill /PID {$process['pid']} /T /F", 'r');
             } else {
                 $storage[] = $process;
             }
         }
         self::$storage = $storage;
-        return self::has($port);
+        // devLog('after_kill');
+        // devLog(self::$storage);
+        return !self::has($port);
     }
 
     public static function fetchJob()
@@ -74,11 +76,14 @@ class PM
 
     public static function save()
     {
+        // devLog('before_save');
+        // devLog(self::$storage);
         $fp = fopen(self::PID_FILE, 'w');
         fwrite($fp, json_encode(self::$storage));
         fclose($fp);
     }
 }
+
 
 
 $params = $_GET;
@@ -107,17 +112,22 @@ function jsonResponse($mixed)
 
 function isPortAlive($port)
 {
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, 'localhost');
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_PORT, $port);
-    $res = curl_exec($ch);
-    return ($res == false) ? false : true;
+    $p = popen('netstat -ano -p TCP', 'r');
+    while(false !== $row = fgets($p, 1024)) {
+        if(strpos($row, 'TCP') === false) continue;
+        $row = preg_replace('/\s+/', ',', trim($row));
+        list(,$line,,,$pid) = explode(',', $row);
+        list(,$match_port) = explode(':', $line);
+        if(intval($match_port) == intval($port)) return true;
+    }
+    return false;
 }
 
 function fetchJob()
 {
-    return ['code' => 'success', 'data' => PM::fetchJob()];
+    $data = PM::fetchJob();
+    PM::save();
+    return ['code' => 'success', 'data' => $data];
 }
 
 function startJob($params)
@@ -147,13 +157,12 @@ function startJob($params)
             sleep(1);
         }
     }
-    return ['code' => 'fail', 'data' => 'fail to start a job'];
+    return ['code' => 'fail', 'data' => 'Fail to start a job'];
 }
 
 function stopJob($params)
 {
-    $port = $params['port'];
-    $res = PM::kill($port);
+    $res = PM::kill($params['port']);
     PM::save();
 
     if(!$res) {
@@ -184,7 +193,11 @@ function getPidByPort($port)
 }
 
 
-
+function devLog($msg)
+{
+    $msg = '[' . date('Y-m-d H:i:s') . '] - ' . json_encode($msg) . "\r\n"; 
+    error_log($msg, 3, 'dev.txt');
+}
 
 
 
